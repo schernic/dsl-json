@@ -78,6 +78,10 @@ public class ReflectionTest {
 		Assert.assertEquals(r3.self.sc.x, sc2.x);
 	}
 
+	public static class WithGenericSuperclass extends Generic<String> {
+
+	}
+
 	public static class Generic<T> {
 		public T property;
 	}
@@ -99,6 +103,13 @@ public class ReflectionTest {
 		ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
 		Generic<String> sc2 = deserialize(new TypeDefinition<Generic<String>>(){}, bais);
 		Assert.assertEquals(str.property, sc2.property);
+	}
+
+	@Test
+	public void checkGenericSuperclass() throws IOException {
+		byte[] bytes = "{\"property\":\"abc\"}".getBytes("UTF-8");
+		WithGenericSuperclass deser = json.deserialize(WithGenericSuperclass.class, bytes, bytes.length);
+		Assert.assertEquals("abc", deser.property);
 	}
 
 	public static class Immutable {

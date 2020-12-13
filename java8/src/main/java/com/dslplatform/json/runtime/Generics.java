@@ -21,8 +21,10 @@ public abstract class Generics {
 				genericMappings.put(variables[i], actual[i]);
 			}
 		} else {
-			for (final TypeVariable tp : raw.getTypeParameters()) {
-				genericMappings.put(tp, Object.class);
+			for(Class<?> c = raw; c != Object.class; c = c.getSuperclass()) {
+				for (final TypeVariable tp : c.getTypeParameters()) {
+					genericMappings.put(tp, Object.class);
+				}
 			}
 		}
 		return genericMappings;
