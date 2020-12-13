@@ -38,6 +38,8 @@ abstract class Reflection {
 		public Object apply(@Nullable Object instance) {
 			try {
 				return method.invoke(instance);
+			}catch (IllegalArgumentException e){
+				throw new ConfigurationException("Unable to call method " + method.getName() + " of " + method.getDeclaringClass() + " setting value of type " + (instance == null ? "Void" : instance.getClass().getCanonicalName()), e);
 			} catch (IllegalAccessException | InvocationTargetException e) {
 				throw new ConfigurationException("Unable to call method " + method.getName() + " of " + method.getDeclaringClass(), e);
 			}
