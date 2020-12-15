@@ -23,7 +23,7 @@ public abstract class Generics {
 		} else {
 			for(Class<?> c = raw; c != Object.class; c = c.getSuperclass()) {
 				for (final TypeVariable tp : c.getTypeParameters()) {
-					genericMappings.put(tp, Object.class);
+					genericMappings.put(tp, tp.getBounds()[0]);
 				}
 			}
 		}

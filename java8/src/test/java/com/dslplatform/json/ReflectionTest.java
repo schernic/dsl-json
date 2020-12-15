@@ -86,6 +86,23 @@ public class ReflectionTest {
 		public T property;
 	}
 
+	public static class GenericSuperclassHavingBoundTypeParameter extends BoundTypeParameter<String> {
+
+	}
+
+	public static class BoundTypeParameter<T extends String> {
+
+		private T[] property;
+
+		public T[] getProperty() {
+			return property;
+		}
+
+		public void setProperty(T[] property) {
+			this.property = property;
+		}
+	}
+
 	private <T> T deserialize(TypeDefinition<T> td, InputStream is) throws IOException {
 		return (T)json.deserialize(td.type, is);
 	}
@@ -110,6 +127,14 @@ public class ReflectionTest {
 		byte[] bytes = "{\"property\":\"abc\"}".getBytes("UTF-8");
 		WithGenericSuperclass deser = json.deserialize(WithGenericSuperclass.class, bytes, bytes.length);
 		Assert.assertEquals("abc", deser.property);
+	}
+
+
+	@Test
+	public void checkBoundTypeParameter() throws IOException {
+		byte[] bytes = "{\"property\":[\"abc\"]}".getBytes("UTF-8");
+		GenericSuperclassHavingBoundTypeParameter deser = json.deserialize(GenericSuperclassHavingBoundTypeParameter.class, bytes,bytes.length);
+		Assert.assertArrayEquals(new String[]{"abc"}, deser.getProperty());
 	}
 
 	public static class Immutable {
