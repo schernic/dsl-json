@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -54,26 +55,19 @@ public class ReflectionTest {
         public T property;
     }
 
-    public static class ConcreteTypeParametersClass extends AbstractClassWithTypeParameters<ConcretePropertyClass1<Boolean>, ConcretePropertyClass2> {
+    public static class PassThroughTypeParameterClass<PassThroughType> extends PassThroughTypeParameterChangesNameClass<PassThroughType, String> {
 
-    }
+        private PassThroughType passThroughTypeProperty;
 
-    public static class ConcretePropertyClass1<PassThroughType> extends AbstractPropertyClass1<PassThroughType, String, GenericPropertyClass<Integer>> {
-
-        private PassThroughType passThroughTypePropertyInBetweenLevel;
-
-        public PassThroughType getPassThroughTypePropertyInBetweenLevel() {
-            return passThroughTypePropertyInBetweenLevel;
+        public PassThroughType getPassThroughTypeProperty() {
+            return passThroughTypeProperty;
         }
 
-        public void setPassThroughTypePropertyInBetweenLevel(PassThroughType passThroughTypePropertyInBetweenLevel) {
-            this.passThroughTypePropertyInBetweenLevel = passThroughTypePropertyInBetweenLevel;
+        public void setPassThroughTypeProperty(PassThroughType passThroughTypeProperty) {
+            this.passThroughTypeProperty = passThroughTypeProperty;
         }
     }
 
-    public static class ConcretePropertyClass2 extends GenericPropertyClass<Integer> {
-
-    }
     public static class GenericLevel2<T> extends Generic<T> {
 
     }
@@ -94,34 +88,17 @@ public class ReflectionTest {
 
     }
 
-    public static class GenericPropertyClass<T extends Integer> {
+    public static abstract class PassThroughTypeParameterChangesNameClass<PassThroughTypeChangedName, PassThroughType extends String> {
 
-        private T[] property;
-
-        public T[] getProperty() {
-            return property;
-        }
-
-        public void setProperty(T[] property) {
-            this.property = property;
-        }
-    }
-
-    /**
-     * Naming of type parameters is intentionally inconsistent with superclass ConcretePropertyClass1, testing if the order of the type parameters is respected
-     * instead of their naming which isn't a valid identifier between different classes. PassThroughType is of actual type String here while it is of type Boolean in ConcretePropertyClass1
-     */
-    public static abstract class AbstractPropertyClass1<PassThroughTypeChangedName, PassThroughType extends String, NestedType extends GenericPropertyClass<?>> {
         private PassThroughType[] property;
-        private NestedType nestedProperty;
-        private PassThroughTypeChangedName passThroughTypePropertyAtTopLevel;
+        private PassThroughTypeChangedName passThroughWithChangedTypeNameProperty;
 
-        public PassThroughTypeChangedName getPassThroughTypePropertyAtTopLevel() {
-            return passThroughTypePropertyAtTopLevel;
+        public PassThroughTypeChangedName getPassThroughWithChangedTypeNameProperty() {
+            return passThroughWithChangedTypeNameProperty;
         }
 
-        public void setPassThroughTypePropertyAtTopLevel(PassThroughTypeChangedName passThroughTypePropertyAtTopLevel) {
-            this.passThroughTypePropertyAtTopLevel = passThroughTypePropertyAtTopLevel;
+        public void setPassThroughWithChangedTypeNameProperty(PassThroughTypeChangedName passThroughWithChangedTypeNameProperty) {
+            this.passThroughWithChangedTypeNameProperty = passThroughWithChangedTypeNameProperty;
         }
 
         public PassThroughType[] getProperty() {
@@ -131,35 +108,17 @@ public class ReflectionTest {
         public void setProperty(PassThroughType[] property) {
             this.property = property;
         }
-
-        public NestedType getNestedProperty() {
-            return nestedProperty;
-        }
-
-        public void setNestedProperty(NestedType nestedProperty) {
-            this.nestedProperty = nestedProperty;
-        }
-
     }
 
-    public static abstract class AbstractClassWithTypeParameters<P1 extends AbstractPropertyClass1<?, ? extends String, ? extends GenericPropertyClass<? extends Integer>>, P2 extends GenericPropertyClass<?>> {
-        private P1 property1;
-        private P2 property2;
+    public static class ClassWithTypeParameterHavingGenericBound<T extends Generic<?>> {
+        private T propertyWithGenericBound;
 
-        public P1 getProperty1() {
-            return property1;
+        public T getPropertyWithGenericBound() {
+            return propertyWithGenericBound;
         }
 
-        public void setProperty1(P1 property1) {
-            this.property1 = property1;
-        }
-
-        public P2 getProperty2() {
-            return property2;
-        }
-
-        public void setProperty2(P2 property2) {
-            this.property2 = property2;
+        public void setPropertyWithGenericBound(T propertyWithGenericBound) {
+            this.propertyWithGenericBound = propertyWithGenericBound;
         }
     }
 
@@ -548,18 +507,23 @@ public class ReflectionTest {
     }
 
     @Test
-    public void checkTypeParametersWithBoundsClassHierarchy() throws IOException {
-        byte[] bytes = "{\"property1\":{\"property\":[\"abc\"], \"nestedProperty\":{\"property\":[1,2]}, \"passThroughTypePropertyInBetweenLevel\": true, \"passThroughTypePropertyAtTopLevel\": true }, \"property2\": {\"property\": [3]}}".getBytes("UTF-8");
-        ConcreteTypeParametersClass deser = json.deserialize(ConcreteTypeParametersClass.class, bytes, bytes.length);
-        Assert.assertArrayEquals(new String[]{"abc"}, deser.getProperty1().getProperty());
-        Assert.assertArrayEquals(new Integer[]{1, 2}, deser.getProperty1().getNestedProperty().getProperty());
-        Assert.assertTrue(deser.getProperty1().getPassThroughTypePropertyAtTopLevel().booleanValue());
-        Assert.assertTrue(deser.getProperty1().getPassThroughTypePropertyInBetweenLevel().booleanValue());
-        Assert.assertArrayEquals(new Integer[]{Integer.valueOf(3)}, deser.getProperty2().getProperty());
+    public void checkPassingActualTypeWhenTypeParameterNameChanges() throws IOException {
+        byte[] bytes = "{\"property\":[\"abc\"],\"passThroughTypeProperty\": true, \"passThroughWithChangedTypeNameProperty\": true }".getBytes("UTF-8");
+        PassThroughTypeParameterClass<Boolean> deser = deserialize(new TypeDefinition<PassThroughTypeParameterClass<Boolean>>(){},bytes);
+        Assert.assertArrayEquals(new String[]{"abc"}, deser.getProperty());
+        Assert.assertTrue(deser.getPassThroughWithChangedTypeNameProperty());
+        Assert.assertTrue(deser.getPassThroughTypeProperty());
     }
 
     @Test
-    public void checkDeepHierarchyTypePassing() throws IOException {
+    public void checkActualTypeMappingOfGenericBound() throws IOException {
+        byte[] bytes = "{\"propertyWithGenericBound\":{\"property\":\"abc\"}}".getBytes("UTF-8");
+        ClassWithTypeParameterHavingGenericBound<GenericLevel2<String>> deser = deserialize(new TypeDefinition<ClassWithTypeParameterHavingGenericBound<GenericLevel2<String>>>(){}, bytes);
+        Assert.assertEquals("abc", deser.getPropertyWithGenericBound().property);
+    }
+
+    @Test
+    public void checkPassingActualTypeThroughDeepClassHierarchy() throws IOException {
         byte[] bytes = "{\"property\":{\"s\":\"abc\"}}".getBytes("UTF-8");
         GenericLevel3<Level3PropertyClass> deser = deserialize(new TypeDefinition<GenericLevel3<Level3PropertyClass>>(){}, bytes);
         Assert.assertEquals("abc", deser.property.s);
